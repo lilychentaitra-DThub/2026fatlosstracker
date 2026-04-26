@@ -42,6 +42,44 @@ body{
 
 .wrap{max-width:1060px;margin:0 auto;padding:40px 24px 80px;}
 
+/* ── RWD MOBILE ── */
+@media(max-width:600px){
+  .wrap{padding:20px 14px 60px;}
+  header{grid-template-columns:1fr;gap:14px;padding-bottom:20px;margin-bottom:20px;}
+  .header-right{text-align:left;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .streak-box{padding:8px 14px;display:inline-flex;align-items:center;gap:8px;}
+  .streak-num{font-size:20px;}
+  .streak-lbl{margin-top:0;font-size:8px;}
+  .hdate{margin-bottom:0;}
+  h1{font-size:26px;}
+  .tagline{display:none;}
+  .sys-badge{margin-bottom:6px;}
+  .stats-row{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;}
+  .stat-card{padding:12px;}
+  .stat-card .num{font-size:18px;}
+  .tabs{margin-bottom:14px;}
+  .tab{padding:9px 10px;font-size:10px;letter-spacing:0.04em;}
+  .card{padding:14px;margin-bottom:10px;}
+  .card-head{margin-bottom:10px;padding-bottom:10px;}
+  .today-grid{grid-template-columns:1fr;}
+  .today-grid > div:last-child{display:none;}
+  .check-item{padding:13px 0;}
+  .chk-box{width:22px;height:22px;border-radius:5px;}
+  .cal-grid{gap:2px;}
+  .cal-day{font-size:12px;}
+  .cal-dots{display:none;}
+  .review-grid{grid-template-columns:repeat(2,1fr);}
+  .rv-val{font-size:18px;}
+  .roadmap-grid{grid-template-columns:1fr;}
+  .section-row input,.section-row select{width:86px;font-size:12px;}
+  .chart-empty{height:100px;font-size:10px;}
+  .modal{padding:16px;}
+  .toolbar{flex-direction:column;}
+  .toolbar .btn{width:100%;text-align:center;}
+  footer{font-size:8px;padding-top:12px;}
+  .tl-btn{font-size:9px;padding:8px 2px;}
+}
+
 /* ── HEADER ── */
 header{
   padding-bottom:32px;margin-bottom:32px;
@@ -430,6 +468,7 @@ footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);font-fa
     <div class="tagline">NOT WILLPOWER — DESIGN · DAILY LOG → WEEKLY REVIEW → MONTHLY ADJUST</div>
   </div>
   <div class="header-right">
+    <div id="userInfo" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"></div>
     <div class="hdate" id="hDate"></div>
     <div class="streak-box">
       <span class="streak-num" id="hStreak">0</span>
@@ -666,7 +705,7 @@ footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);font-fa
       <textarea id="mAdjust" placeholder="這個月決定調整的一個變數是？為什麼？" style="min-height:80px;"></textarea>
     </div>
     <div style="margin-top:14px;display:flex;align-items:center;">
-      <button class="btn" onclick="saveMonthly()">儲存月度紀錄</button>
+      <button class="btn" onclick="saveMonthlyReview()">儲存月度紀錄</button>
       <span class="save-flash" id="mSaved">SAVED ✓</span>
     </div>
   </div>
@@ -744,10 +783,337 @@ footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);font-fa
   </div>
 </div>
 
+<!-- Auth Overlay -->
+<div id="authOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:24px;">
+  <div style="text-align:center;">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;color:var(--ink3);margin-bottom:16px;">BODY.SYS v2</div>
+    <div style="font-size:32px;font-weight:700;margin-bottom:8px;">減脂<span style="color:var(--accent)">追蹤</span>器</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);margin-bottom:32px;">登入以同步你的雲端資料</div>
+    <button id="googleSignInBtn" style="display:flex;align-items:center;gap:12px;padding:12px 24px;background:#fff;border:1px solid var(--line2);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;margin:0 auto;box-shadow:0 1px 4px rgba(0,0,0,0.08);transition:box-shadow 0.15s;">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/></svg>
+      使用 Google 帳號登入
+    </button>
+  </div>
+  <div id="authStatus" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);letter-spacing:0.1em;"></div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display:flex;position:fixed;inset:0;background:var(--bg);z-index:998;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+  <div style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--ink);">減脂<span style="color:var(--accent)">追蹤</span>器</div>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);letter-spacing:0.15em;">LOADING…</div>
+</div>
+
 <footer>BODY.SYS v2 · Built for Lily · Keep it Sustainable · Not Perfect</footer>
 </div>
 
-<script>
+<script type="module">
+// ═══ FIREBASE ═══
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js';
+import { getFirestore, doc, getDoc, getDocs, setDoc, collection, writeBatch, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAKIjyFlHjmunaeeuSJkuaKpPWMDJsvnfQ",
+  authDomain: "fat-loss-tracker-0426.firebaseapp.com",
+  projectId: "fat-loss-tracker-0426",
+  storageBucket: "fat-loss-tracker-0426.firebasestorage.app",
+  messagingSenderId: "821144815360",
+  appId: "1:821144815360:web:9110558544dac102eb95e5"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ═══ CACHE (in-memory, synced from Firestore) ═══
+let UID = null;
+const cache = { daily:{}, startup:{}, weekly:{}, monthly:{} };
+
+// Firestore helpers
+function userRef(col) { return collection(db, 'users', UID, col); }
+function userDocRef(col, id) { return doc(db, 'users', UID, col, id); }
+
+async function fsSet(col, id, data) {
+  if (!UID) return;
+  try { await setDoc(userDocRef(col, id), data, {merge:true}); } catch(e) { console.warn('fsSet', e); }
+}
+
+// Track active listeners so we can clean up on sign-out
+const listeners = [];
+
+// Track if this client is the source of the most recent write (debounce self-echo)
+let lastLocalWriteAt = 0;
+
+async function loadFromFirestore() {
+  const authStatus = document.getElementById('authStatus');
+  authStatus.textContent = 'SYNCING DATA…';
+
+  // Detach any previous listeners (in case of re-login)
+  listeners.forEach(unsub => { try { unsub(); } catch(e) {} });
+  listeners.length = 0;
+
+  return new Promise((resolve) => {
+    let firstLoadParts = { daily: false, startup: false, weekly: false, monthly: false };
+    let resolved = false;
+    function checkFirstLoad() {
+      if (resolved) return;
+      if (firstLoadParts.daily && firstLoadParts.startup && firstLoadParts.weekly && firstLoadParts.monthly) {
+        resolved = true;
+        authStatus.textContent = '';
+        resolve();
+      }
+    }
+
+    // ── Real-time listeners ──
+    // Daily logs
+    listeners.push(onSnapshot(userRef('daily'), (snap) => {
+      const next = {};
+      snap.forEach(d => { next[d.id] = d.data(); });
+      cache.daily = next;
+      firstLoadParts.daily = true;
+      checkFirstLoad();
+      // Re-render if app already initialized
+      if (window._appInitialized) refreshAll();
+    }, (err) => {
+      console.error('[snap daily]', err);
+      authStatus.textContent = 'SYNC ERROR — ' + (err.code || err.message);
+      firstLoadParts.daily = true; checkFirstLoad();
+    }));
+
+    // Startup meta
+    listeners.push(onSnapshot(userDocRef('meta', 'startup'), (snap) => {
+      cache.startup = snap.exists() ? snap.data() : {};
+      firstLoadParts.startup = true;
+      checkFirstLoad();
+      if (window._appInitialized) refreshAll();
+    }, (err) => {
+      console.error('[snap startup]', err);
+      firstLoadParts.startup = true; checkFirstLoad();
+    }));
+
+    // Weekly
+    listeners.push(onSnapshot(userRef('weekly'), (snap) => {
+      const next = {};
+      snap.forEach(d => { next[d.id] = d.data(); });
+      cache.weekly = next;
+      firstLoadParts.weekly = true;
+      checkFirstLoad();
+      if (window._appInitialized) refreshAll();
+    }, (err) => {
+      console.error('[snap weekly]', err);
+      firstLoadParts.weekly = true; checkFirstLoad();
+    }));
+
+    // Monthly
+    listeners.push(onSnapshot(userRef('monthly'), (snap) => {
+      const next = {};
+      snap.forEach(d => { next[d.id] = d.data(); });
+      cache.monthly = next;
+      firstLoadParts.monthly = true;
+      checkFirstLoad();
+      if (window._appInitialized) refreshAll();
+    }, (err) => {
+      console.error('[snap monthly]', err);
+      firstLoadParts.monthly = true; checkFirstLoad();
+    }));
+
+    // Safety timeout — if some collections are empty/never resolve, don't block forever
+    setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        authStatus.textContent = '';
+        resolve();
+      }
+    }, 5000);
+  });
+}
+
+// Re-render every visible panel when remote data changes
+function refreshAll() {
+  try {
+    if (typeof renderToday === 'function') renderToday();
+    if (typeof renderHistory === 'function') renderHistory();
+    if (typeof renderCalendar === 'function') renderCalendar();
+    if (typeof renderWeekly === 'function') renderWeekly();
+    if (typeof renderMonthly === 'function') renderMonthly();
+    if (typeof updateStats === 'function') updateStats();
+    if (typeof renderStartup === 'function') renderStartup();
+  } catch(e) { console.warn('refreshAll', e); }
+}
+
+// Replace load/save with cache accessors
+const loadDaily  = () => cache.daily;
+const loadSU     = () => cache.startup;
+const loadWeekly = () => cache.weekly;
+const loadMonthly= () => cache.monthly;
+
+function saveDaily(data) {
+  cache.daily = data;
+  // write only today's record
+  const tk = todayKey();
+  if (data[tk]) fsSet('daily', tk, data[tk]);
+}
+function saveSU(data) {
+  cache.startup = data;
+  fsSet('meta', 'startup', data);
+}
+function saveWeekly(data) {
+  cache.weekly = data;
+  const wk = weekKey();
+  if (data[wk]) fsSet('weekly', wk, data[wk]);
+}
+function saveMonthly(data) {
+  cache.monthly = data;
+  const d = new Date();
+  const mk = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  if (data[mk]) fsSet('monthly', mk, data[mk]);
+}
+
+// ─── Auth UI ───
+const authOverlay = document.getElementById('authOverlay');
+const loadingOverlay = document.getElementById('loadingOverlay');
+
+// Detect mobile early
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+// Show loading during initial auth resolution (redirect result can take a few seconds on mobile)
+async function startApp() {
+  loadingOverlay.style.display = 'flex';
+
+  let redirectUser = null;
+
+  // 1. Explicitly handle redirect result (critical for mobile flow)
+  try {
+    const result = await getRedirectResult(auth);
+    if (result && result.user) {
+      redirectUser = result.user;
+      console.log('[auth] redirect result resolved:', result.user.uid);
+    }
+  } catch(e) {
+    console.error('[auth] getRedirectResult error:', e);
+    document.getElementById('authStatus').textContent = '登入回傳錯誤：' + (e.code || e.message || '');
+  }
+
+  // 2. Wait for Firebase to restore persisted auth state
+  try {
+    await auth.authStateReady();
+  } catch(e) { console.warn('[auth] authStateReady', e); }
+
+  // 3. Use whichever resolved
+  const user = redirectUser || auth.currentUser;
+
+  // 4. Listen for late state changes (covers edge case where authStateReady resolves before redirect completes)
+  onAuthStateChanged(auth, async (u) => {
+    if (u && !UID) {
+      UID = u.uid;
+      authOverlay.style.display = 'none';
+      loadingOverlay.style.display = 'flex';
+      updateUserUI(u);
+      await loadFromFirestore();
+      loadingOverlay.style.display = 'none';
+      init();
+    }
+  });
+
+  loadingOverlay.style.display = 'none';
+
+  if (user) {
+    UID = user.uid;
+    authOverlay.style.display = 'none';
+    loadingOverlay.style.display = 'flex';
+    updateUserUI(user);
+    await loadFromFirestore();
+    loadingOverlay.style.display = 'none';
+    init();
+  } else {
+    authOverlay.style.display = 'flex';
+  }
+}
+
+startApp();
+
+document.getElementById('googleSignInBtn').addEventListener('click', async () => {
+  const provider = new GoogleAuthProvider();
+  // Force account chooser, helps avoid silent failures
+  provider.setCustomParameters({ prompt: 'select_account' });
+
+  try {
+    document.getElementById('authStatus').textContent = '登入中…';
+
+    if (isMobile) {
+      // Mobile: use redirect (popup is unreliable on mobile Safari/Chrome)
+      loadingOverlay.style.display = 'flex';
+      authOverlay.style.display = 'none';
+      await signInWithRedirect(auth, provider);
+      // Page will navigate away; nothing else runs here
+    } else {
+      // Desktop: try popup, fall back to redirect if popup is blocked
+      try {
+        const result = await signInWithPopup(auth, provider);
+        if (result.user) {
+          UID = result.user.uid;
+          authOverlay.style.display = 'none';
+          loadingOverlay.style.display = 'flex';
+          updateUserUI(result.user);
+          await loadFromFirestore();
+          loadingOverlay.style.display = 'none';
+          init();
+        }
+      } catch(popupErr) {
+        if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user') {
+          loadingOverlay.style.display = 'flex';
+          authOverlay.style.display = 'none';
+          await signInWithRedirect(auth, provider);
+        } else {
+          throw popupErr;
+        }
+      }
+    }
+  } catch(e) {
+    loadingOverlay.style.display = 'none';
+    authOverlay.style.display = 'flex';
+    document.getElementById('authStatus').textContent = '登入失敗：' + (e.code || e.message || '請再試一次');
+    console.error('[auth] sign-in error:', e);
+  }
+});
+
+function updateUserUI(user) {
+  const el = document.getElementById('userInfo');
+  if (!el) return;
+  el.innerHTML = `
+    <img src="${user.photoURL}" style="width:26px;height:26px;border-radius:50%;vertical-align:middle;">
+    <span style="font-size:11px;color:var(--ink2);">${user.displayName?.split(' ')[0] || user.email}</span>
+    <button onclick="doSignOut()" style="background:none;border:1px solid var(--line);border-radius:4px;padding:3px 8px;font-family:'JetBrains Mono',monospace;font-size:9px;cursor:pointer;color:var(--ink3);letter-spacing:0.08em;">登出</button>
+  `;
+}
+window.doSignOut = async () => { await signOut(auth); location.reload(); };
+
+// ═══ RE-EXPORT JSON (updated for cache) ═══
+window.exportJSONFn = function() {
+  const blob = new Blob([JSON.stringify({data:cache.daily,startup:cache.startup,weekly:cache.weekly,monthly:cache.monthly},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`body_sys_${todayKey()}.json`;a.click();
+};
+window.importJSONFn = async function(e) {
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    try {
+      const o=JSON.parse(ev.target.result);
+      if(!UID){alert('請先登入');return;}
+      const batch=writeBatch(db);
+      if(o.data) { Object.entries(o.data).forEach(([k,v])=>batch.set(userDocRef('daily',k),v,{merge:true})); }
+      if(o.startup) batch.set(userDocRef('meta','startup'),o.startup,{merge:true});
+      if(o.weekly) { Object.entries(o.weekly).forEach(([k,v])=>batch.set(userDocRef('weekly',k),v,{merge:true})); }
+      if(o.monthly) { Object.entries(o.monthly).forEach(([k,v])=>batch.set(userDocRef('monthly',k),v,{merge:true})); }
+      await batch.commit();
+      await loadFromFirestore();
+      init();
+      alert('匯入成功！');
+    } catch(err){alert('格式錯誤或匯入失敗：'+err.message);}
+  };
+  reader.readAsText(file);
+};
+
+// ═══ CONSTANTS ═══
 const SK='ft_v2_data',SUK='ft_v2_startup',SRK='ft_v2_reviews',SMK='ft_v2_monthly';
 const CHECKS=[
   {id:'train',label:'今天有重訓',sub:''},
@@ -770,8 +1136,9 @@ const STARTUP=[
 const WD=['日','一','二','三','四','五','六'];
 const MN=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
 
-const load=k=>{try{return JSON.parse(localStorage.getItem(k))||{};}catch{return{};}};
-const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+// load/save now use cache + Firestore
+const load=k=>k===SK?loadDaily():k===SUK?loadSU():k===SRK?loadWeekly():loadMonthly();
+const save=(k,v)=>k===SK?saveDaily(v):k===SUK?saveSU(v):k===SRK?saveWeekly(v):saveMonthly(v);
 function dateKey(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function todayKey(){return dateKey(new Date());}
 function weekStart(d){const day=d.getDay()||7;const s=new Date(d);s.setDate(d.getDate()-day+1);s.setHours(0,0,0,0);return s;}
@@ -1001,21 +1368,19 @@ function renderMonthly(){
   document.getElementById('mWDelta').textContent=wd!=='—'&&parseFloat(wd)>0?'+'+wd:wd;document.getElementById('mBFDelta').textContent=bd!=='—'&&parseFloat(bd)>0?'+'+bd:bd;
   document.getElementById('mAdjust').value=rev.adjust||'';
 }
-function saveMonthly(){
-  const monthly=load(SMK);const d=new Date();const mk=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-  if(!monthly[mk])monthly[mk]={};monthly[mk].adjust=document.getElementById('mAdjust').value;save(SMK,monthly);flashSave('mSaved');
+function saveMonthlyReview(){
 }
 
 // Data
-function exportJSON(){const blob=new Blob([JSON.stringify({data:load(SK),startup:load(SUK),reviews:load(SRK),monthly:load(SMK)},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`body_sys_${todayKey()}.json`;a.click();}
-function importJSON(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{try{const o=JSON.parse(ev.target.result);if(o.data)save(SK,o.data);if(o.startup)save(SUK,o.startup);if(o.reviews)save(SRK,o.reviews);if(o.monthly)save(SMK,o.monthly);alert('匯入成功！');init();}catch{alert('格式錯誤。');}};reader.readAsText(file);}
+function exportJSON(){exportJSONFn();}
+function importJSON(e){importJSONFn(e);}
 function exportCSV(){
   const data=load(SK);const h=['日期','體重','體脂','步數','精力','重訓','蛋白質','無糖','不晚食','飲水','睡眠','步數達標','自由餐','分數','備註'];
   const rows=Object.keys(data).sort().map(k=>{const r=data[k];const c=r.checks||{};return[k,r.weight||'',r.bodyFat||'',r.steps||'',r.energy||'',c.train?1:0,c.protein?1:0,c.noSugar?1:0,c.noLate?1:0,c.water?1:0,c.sleep?1:0,c.walk?1:0,c.freeMeal?1:0,score(r)||0,(r.notes||'').replace(/,/g,'，').replace(/\n/g,' ')].join(',');});
   const csv=[h.join(','),...rows].join('\n');document.getElementById('csvPreview').textContent=csv;
   const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`body_sys_${todayKey()}.csv`;a.click();
 }
-function clearAll(){if(!confirm('確定要清除所有資料？'))return;[SK,SUK,SRK,SMK].forEach(k=>localStorage.removeItem(k));init();}
+function clearAll(){if(!confirm('確定要清除所有資料？這會清除 Firestore 上的所有紀錄。'))return;cache.daily={};cache.startup={};cache.weekly={};cache.monthly={};init();alert('已清除本地快取，Firestore 資料請至 Firebase Console 手動刪除。');}
 
 // Tabs
 const TAB_FNS={today:renderToday,trend:renderTrends,history:renderCalendar,weekly:renderWeekly,monthly:renderMonthly,plan:()=>{},data:updateStats};
@@ -1023,8 +1388,15 @@ document.querySelectorAll('.tab').forEach(tab=>{tab.addEventListener('click',()=
 document.getElementById('prevMonth').onclick=()=>{calMonth.setMonth(calMonth.getMonth()-1);renderCalendar();};
 document.getElementById('nextMonth').onclick=()=>{calMonth.setMonth(calMonth.getMonth()+1);renderCalendar();};
 function flashSave(id){const el=document.getElementById(id);el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2000);}
-function init(){renderToday();bindInputs();}
-init();
+function init(){renderToday();bindInputs();window._appInitialized = true;}
+
+// ═══ EXPOSE TO GLOBAL (required for onclick attrs in module scope) ═══
+Object.assign(window, {
+  toggleCheck, toggleStartup, showDayModal, closeModal,
+  saveWeeklyReview, saveMonthlyReview: saveMonthlyReview,
+  calcWHR, exportJSON, importJSON, clearAll, doSignOut
+});
+// init() is called from startApp() after auth + data load — do not call here
 </script>
 </body>
 </html>
