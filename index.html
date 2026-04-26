@@ -820,8 +820,16 @@ const firebaseConfig = {
   messagingSenderId: "821144815360",
   appId: "1:821144815360:web:9110558544dac102eb95e5"
 };
+
+// ═══ Persistence: critical for mobile Safari/Chrome ═══
+// Without this, login state can be lost between redirect roundtrips on iOS due to ITP cookie restrictions.
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+// Use IndexedDB persistence — survives mobile Safari ITP better than localStorage
+import('https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js').then(m => {
+  const { setPersistence, browserLocalPersistence, indexedDBLocalPersistence } = m;
+  setPersistence(auth, indexedDBLocalPersistence).catch(() => setPersistence(auth, browserLocalPersistence)).catch(e => console.warn('[auth] persistence', e));
+});
 const db = getFirestore(app);
 
 // ═══ CACHE (in-memory, synced from Firestore) ═══
@@ -1039,35 +1047,12 @@ document.getElementById('googleSignInBtn').addEventListener('click', async () =>
   try {
     document.getElementById('authStatus').textContent = '登入中…';
 
-    if (isMobile) {
-      // Mobile: use redirect (popup is unreliable on mobile Safari/Chrome)
-      loadingOverlay.style.display = 'flex';
-      authOverlay.style.display = 'none';
-      await signInWithRedirect(auth, provider);
-      // Page will navigate away; nothing else runs here
-    } else {
-      // Desktop: try popup, fall back to redirect if popup is blocked
-      try {
-        const result = await signInWithPopup(auth, provider);
-        if (result.user) {
-          UID = result.user.uid;
-          authOverlay.style.display = 'none';
-          loadingOverlay.style.display = 'flex';
-          updateUserUI(result.user);
-          await loadFromFirestore();
-          loadingOverlay.style.display = 'none';
-          init();
-        }
-      } catch(popupErr) {
-        if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user') {
-          loadingOverlay.style.display = 'flex';
-          authOverlay.style.display = 'none';
-          await signInWithRedirect(auth, provider);
-        } else {
-          throw popupErr;
-        }
-      }
-    }
+    // Always use redirect on GitHub Pages — popup is blocked by Cross-Origin-Opener-Policy header
+    // that GitHub Pages sets, which breaks signInWithPopup on every browser.
+    loadingOverlay.style.display = 'flex';
+    authOverlay.style.display = 'none';
+    await signInWithRedirect(auth, provider);
+    // Page navigates away; nothing else runs here.
   } catch(e) {
     loadingOverlay.style.display = 'none';
     authOverlay.style.display = 'flex';
