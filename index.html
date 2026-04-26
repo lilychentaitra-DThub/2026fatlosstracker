@@ -892,11 +892,15 @@ function saveMonthly(data) {
 const authOverlay = document.getElementById('authOverlay');
 const loadingOverlay = document.getElementById('loadingOverlay');
 
-// Handle redirect result first (mobile)
-getRedirectResult(auth).catch(e => console.warn('redirect result error', e));
+async function startApp() {
+  // Wait for Firebase to restore auth state (handles redirect result too)
+  try {
+    await auth.authStateReady();
+  } catch(e) { console.warn(e); }
 
-onAuthStateChanged(auth, async user => {
+  const user = auth.currentUser;
   loadingOverlay.style.display = 'none';
+
   if (user) {
     UID = user.uid;
     authOverlay.style.display = 'none';
@@ -904,10 +908,11 @@ onAuthStateChanged(auth, async user => {
     await loadFromFirestore();
     init();
   } else {
-    UID = null;
     authOverlay.style.display = 'flex';
   }
-});
+}
+
+startApp();
 
 document.getElementById('googleSignInBtn').addEventListener('click', async () => {
   const provider = new GoogleAuthProvider();
@@ -916,12 +921,21 @@ document.getElementById('googleSignInBtn').addEventListener('click', async () =>
     document.getElementById('authStatus').textContent = '登入中…';
     if (isMobile) {
       loadingOverlay.style.display = 'flex';
+      authOverlay.style.display = 'none';
       await signInWithRedirect(auth, provider);
     } else {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        UID = result.user.uid;
+        authOverlay.style.display = 'none';
+        updateUserUI(result.user);
+        await loadFromFirestore();
+        init();
+      }
     }
   } catch(e) {
     loadingOverlay.style.display = 'none';
+    authOverlay.style.display = 'flex';
     document.getElementById('authStatus').textContent = '登入失敗，請再試一次';
     console.error(e);
   }
