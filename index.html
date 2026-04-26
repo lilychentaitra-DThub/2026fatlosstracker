@@ -1182,6 +1182,13 @@ document.getElementById('prevMonth').onclick=()=>{calMonth.setMonth(calMonth.get
 document.getElementById('nextMonth').onclick=()=>{calMonth.setMonth(calMonth.getMonth()+1);renderCalendar();};
 function flashSave(id){const el=document.getElementById(id);el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2000);}
 function init(){renderToday();bindInputs();}
+
+// ═══ EXPOSE TO GLOBAL (required for onclick attrs in module scope) ═══
+Object.assign(window, {
+  toggleCheck, toggleStartup, showDayModal, closeModal,
+  saveWeeklyReview, saveMonthlyReview: saveMonthlyReview,
+  calcWHR, exportJSON, importJSON, clearAll, doSignOut
+});
 init();
 </script>
 </body>
