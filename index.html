@@ -42,6 +42,44 @@ body{
 
 .wrap{max-width:1060px;margin:0 auto;padding:40px 24px 80px;}
 
+/* ── RWD MOBILE ── */
+@media(max-width:600px){
+  .wrap{padding:20px 14px 60px;}
+  header{grid-template-columns:1fr;gap:14px;padding-bottom:20px;margin-bottom:20px;}
+  .header-right{text-align:left;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .streak-box{padding:8px 14px;display:inline-flex;align-items:center;gap:8px;}
+  .streak-num{font-size:20px;}
+  .streak-lbl{margin-top:0;font-size:8px;}
+  .hdate{margin-bottom:0;}
+  h1{font-size:26px;}
+  .tagline{display:none;}
+  .sys-badge{margin-bottom:6px;}
+  .stats-row{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;}
+  .stat-card{padding:12px;}
+  .stat-card .num{font-size:18px;}
+  .tabs{margin-bottom:14px;}
+  .tab{padding:9px 10px;font-size:10px;letter-spacing:0.04em;}
+  .card{padding:14px;margin-bottom:10px;}
+  .card-head{margin-bottom:10px;padding-bottom:10px;}
+  .today-grid{grid-template-columns:1fr;}
+  .today-grid > div:last-child{display:none;}
+  .check-item{padding:13px 0;}
+  .chk-box{width:22px;height:22px;border-radius:5px;}
+  .cal-grid{gap:2px;}
+  .cal-day{font-size:12px;}
+  .cal-dots{display:none;}
+  .review-grid{grid-template-columns:repeat(2,1fr);}
+  .rv-val{font-size:18px;}
+  .roadmap-grid{grid-template-columns:1fr;}
+  .section-row input,.section-row select{width:86px;font-size:12px;}
+  .chart-empty{height:100px;font-size:10px;}
+  .modal{padding:16px;}
+  .toolbar{flex-direction:column;}
+  .toolbar .btn{width:100%;text-align:center;}
+  footer{font-size:8px;padding-top:12px;}
+  .tl-btn{font-size:9px;padding:8px 2px;}
+}
+
 /* ── HEADER ── */
 header{
   padding-bottom:32px;margin-bottom:32px;
