@@ -797,6 +797,12 @@ footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);font-fa
   <div id="authStatus" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);letter-spacing:0.1em;"></div>
 </div>
 
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display:flex;position:fixed;inset:0;background:var(--bg);z-index:998;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+  <div style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--ink);">減脂<span style="color:var(--accent)">追蹤</span>器</div>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);letter-spacing:0.15em;">LOADING…</div>
+</div>
+
 <footer>BODY.SYS v2 · Built for Lily · Keep it Sustainable · Not Perfect</footer>
 </div>
 
@@ -883,26 +889,23 @@ function saveMonthly(data) {
 }
 
 // ─── Auth UI ───
+const authOverlay = document.getElementById('authOverlay');
+const loadingOverlay = document.getElementById('loadingOverlay');
+
 // Handle redirect result first (mobile)
-getRedirectResult(auth).then(result => {
-  if (result?.user) {
-    // already handled by onAuthStateChanged
-  }
-}).catch(e => {
-  console.warn('redirect result error', e);
-});
+getRedirectResult(auth).catch(e => console.warn('redirect result error', e));
 
 onAuthStateChanged(auth, async user => {
-  const overlay = document.getElementById('authOverlay');
+  loadingOverlay.style.display = 'none';
   if (user) {
     UID = user.uid;
-    overlay.style.display = 'none';
+    authOverlay.style.display = 'none';
     updateUserUI(user);
     await loadFromFirestore();
     init();
   } else {
     UID = null;
-    overlay.style.display = 'flex';
+    authOverlay.style.display = 'flex';
   }
 });
 
@@ -912,11 +915,13 @@ document.getElementById('googleSignInBtn').addEventListener('click', async () =>
   try {
     document.getElementById('authStatus').textContent = '登入中…';
     if (isMobile) {
+      loadingOverlay.style.display = 'flex';
       await signInWithRedirect(auth, provider);
     } else {
       await signInWithPopup(auth, provider);
     }
   } catch(e) {
+    loadingOverlay.style.display = 'none';
     document.getElementById('authStatus').textContent = '登入失敗，請再試一次';
     console.error(e);
   }
