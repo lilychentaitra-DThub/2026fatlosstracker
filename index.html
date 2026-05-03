@@ -783,18 +783,25 @@ footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);font-fa
   </div>
 </div>
 
-<!-- Auth Overlay -->
-<div id="authOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:24px;">
-  <div style="text-align:center;">
+<!-- Room Setup Overlay (shown only on first visit / when no room id) -->
+<div id="roomOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:24px;padding:24px;">
+  <div style="text-align:center;max-width:420px;width:100%;">
     <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;color:var(--ink3);margin-bottom:16px;">BODY.SYS v2</div>
     <div style="font-size:32px;font-weight:700;margin-bottom:8px;">減脂<span style="color:var(--accent)">追蹤</span>器</div>
-    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);margin-bottom:32px;">登入以同步你的雲端資料</div>
-    <button id="googleSignInBtn" style="display:flex;align-items:center;gap:12px;padding:12px 24px;background:#fff;border:1px solid var(--line2);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;margin:0 auto;box-shadow:0 1px 4px rgba(0,0,0,0.08);transition:box-shadow 0.15s;">
-      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/></svg>
-      使用 Google 帳號登入
-    </button>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);margin-bottom:32px;">設定房間 ID 以同步多裝置</div>
+
+    <div id="roomFormCreate">
+      <div style="font-size:13px;color:var(--ink2);margin-bottom:12px;text-align:left;">輸入一個自訂的房間 ID(英數混合、6 字以上,如同密碼)</div>
+      <input id="roomIdInput" type="text" placeholder="例如: lily2026fatloss" style="width:100%;padding:12px 14px;border:1px solid var(--line2);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:14px;background:#fff;color:var(--ink);box-sizing:border-box;margin-bottom:8px;">
+      <div id="roomHint" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);text-align:left;min-height:14px;margin-bottom:16px;">記住這個 ID,日後其他裝置要輸入同一個</div>
+      <button id="roomEnterBtn" style="width:100%;padding:12px 24px;background:var(--ink);color:var(--bg);border:none;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:0.1em;">進入房間</button>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);margin-top:18px;line-height:1.7;text-align:left;border-top:1px solid var(--line);padding-top:14px;">
+        ‣ 房間 ID 等於你的密碼,請選一個別人猜不到的<br>
+        ‣ 在另一台裝置輸入相同 ID 即可同步資料<br>
+        ‣ 第一次設定後,網址會自動帶上 ?room=,可加入書籤
+      </div>
+    </div>
   </div>
-  <div id="authStatus" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);letter-spacing:0.1em;"></div>
 </div>
 
 <!-- Loading Overlay -->
@@ -809,7 +816,6 @@ footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);font-fa
 <script type="module">
 // ═══ FIREBASE ═══
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js';
 import { getFirestore, doc, getDoc, getDocs, setDoc, collection, writeBatch, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -821,41 +827,63 @@ const firebaseConfig = {
   appId: "1:821144815360:web:9110558544dac102eb95e5"
 };
 
-// ═══ Persistence: critical for mobile Safari/Chrome ═══
-// Without this, login state can be lost between redirect roundtrips on iOS due to ITP cookie restrictions.
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-// Use IndexedDB persistence — survives mobile Safari ITP better than localStorage
-import('https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js').then(m => {
-  const { setPersistence, browserLocalPersistence, indexedDBLocalPersistence } = m;
-  setPersistence(auth, indexedDBLocalPersistence).catch(() => setPersistence(auth, browserLocalPersistence)).catch(e => console.warn('[auth] persistence', e));
-});
 const db = getFirestore(app);
 
+// ═══ ROOM ID — replaces user authentication ═══
+// Identity is a self-chosen room ID stored in the URL (?room=xxx) and localStorage.
+// Anyone with the URL can read/write the room — treat the ID like a password.
+const ROOM_KEY = 'fitness_room_id';
+let ROOM = null;
+
+function getStoredRoom() {
+  // Priority: URL param > localStorage
+  const url = new URL(location.href);
+  const fromUrl = url.searchParams.get('room');
+  if (fromUrl) return fromUrl.trim();
+  try { return localStorage.getItem(ROOM_KEY); } catch { return null; }
+}
+function setStoredRoom(id) {
+  try { localStorage.setItem(ROOM_KEY, id); } catch {}
+  // Reflect in URL without reloading, so the page becomes shareable/bookmarkable
+  const url = new URL(location.href);
+  url.searchParams.set('room', id);
+  history.replaceState(null, '', url.toString());
+}
+function clearStoredRoom() {
+  try { localStorage.removeItem(ROOM_KEY); } catch {}
+  const url = new URL(location.href);
+  url.searchParams.delete('room');
+  history.replaceState(null, '', url.toString());
+}
+
 // ═══ CACHE (in-memory, synced from Firestore) ═══
-let UID = null;
 const cache = { daily:{}, startup:{}, weekly:{}, monthly:{} };
 
-// Firestore helpers
-function userRef(col) { return collection(db, 'users', UID, col); }
-function userDocRef(col, id) { return doc(db, 'users', UID, col, id); }
+// Firestore helpers — now scoped to /rooms/{ROOM}/...
+function userRef(col) { return collection(db, 'rooms', ROOM, col); }
+function userDocRef(col, id) { return doc(db, 'rooms', ROOM, col, id); }
 
 async function fsSet(col, id, data) {
-  if (!UID) return;
+  if (!ROOM) return;
   try { await setDoc(userDocRef(col, id), data, {merge:true}); } catch(e) { console.warn('fsSet', e); }
 }
 
-// Track active listeners so we can clean up on sign-out
+// Track active listeners so we can clean up on room switch
 const listeners = [];
 
 // Track if this client is the source of the most recent write (debounce self-echo)
 let lastLocalWriteAt = 0;
 
 async function loadFromFirestore() {
-  const authStatus = document.getElementById('authStatus');
-  authStatus.textContent = 'SYNCING DATA…';
+  // Use a no-op status setter so we don't crash if the old auth UI element is gone.
+  const setStatus = (msg) => {
+    const el = document.getElementById('roomHint');
+    if (el && msg) el.textContent = msg;
+  };
+  setStatus('SYNCING DATA…');
 
-  // Detach any previous listeners (in case of re-login)
+  // Detach any previous listeners (in case of room switch)
   listeners.forEach(unsub => { try { unsub(); } catch(e) {} });
   listeners.length = 0;
 
@@ -866,7 +894,6 @@ async function loadFromFirestore() {
       if (resolved) return;
       if (firstLoadParts.daily && firstLoadParts.startup && firstLoadParts.weekly && firstLoadParts.monthly) {
         resolved = true;
-        authStatus.textContent = '';
         resolve();
       }
     }
@@ -883,7 +910,7 @@ async function loadFromFirestore() {
       if (window._appInitialized) refreshAll();
     }, (err) => {
       console.error('[snap daily]', err);
-      authStatus.textContent = 'SYNC ERROR — ' + (err.code || err.message);
+      setStatus('SYNC ERROR — ' + (err.code || err.message));
       firstLoadParts.daily = true; checkFirstLoad();
     }));
 
@@ -928,7 +955,6 @@ async function loadFromFirestore() {
     setTimeout(() => {
       if (!resolved) {
         resolved = true;
-        authStatus.textContent = '';
         resolve();
       }
     }, 5000);
@@ -976,101 +1002,109 @@ function saveMonthly(data) {
   if (data[mk]) fsSet('monthly', mk, data[mk]);
 }
 
-// ─── Auth UI ───
-const authOverlay = document.getElementById('authOverlay');
+// ─── Room UI flow ───
+const roomOverlay = document.getElementById('roomOverlay');
 const loadingOverlay = document.getElementById('loadingOverlay');
 
-// Detect mobile early
-const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+// Validate a room ID — keep it URL-safe and password-strength-ish.
+function validateRoomId(raw) {
+  if (!raw) return { ok: false, msg: '請輸入房間 ID' };
+  const id = raw.trim();
+  if (id.length < 6) return { ok: false, msg: '至少 6 個字元' };
+  if (id.length > 64) return { ok: false, msg: '太長了，請少於 64 字元' };
+  if (!/^[a-zA-Z0-9_\-]+$/.test(id)) return { ok: false, msg: '只能用英文、數字、底線、連字號' };
+  return { ok: true, id };
+}
 
-// Show loading during initial auth resolution (redirect result can take a few seconds on mobile)
+async function enterRoom(id) {
+  ROOM = id;
+  setStoredRoom(id);
+  roomOverlay.style.display = 'none';
+  loadingOverlay.style.display = 'flex';
+  await loadFromFirestore();
+  loadingOverlay.style.display = 'none';
+  updateRoomUI();
+  init();
+}
+
 async function startApp() {
   loadingOverlay.style.display = 'flex';
 
-  let redirectUser = null;
-
-  // 1. Explicitly handle redirect result (critical for mobile flow)
-  try {
-    const result = await getRedirectResult(auth);
-    if (result && result.user) {
-      redirectUser = result.user;
-      console.log('[auth] redirect result resolved:', result.user.uid);
+  const stored = getStoredRoom();
+  if (stored) {
+    const v = validateRoomId(stored);
+    if (v.ok) {
+      await enterRoom(v.id);
+      return;
+    } else {
+      // Stored value is somehow invalid — clear and ask again.
+      clearStoredRoom();
     }
-  } catch(e) {
-    console.error('[auth] getRedirectResult error:', e);
-    document.getElementById('authStatus').textContent = '登入回傳錯誤：' + (e.code || e.message || '');
   }
 
-  // 2. Wait for Firebase to restore persisted auth state
-  try {
-    await auth.authStateReady();
-  } catch(e) { console.warn('[auth] authStateReady', e); }
-
-  // 3. Use whichever resolved
-  const user = redirectUser || auth.currentUser;
-
-  // 4. Listen for late state changes (covers edge case where authStateReady resolves before redirect completes)
-  onAuthStateChanged(auth, async (u) => {
-    if (u && !UID) {
-      UID = u.uid;
-      authOverlay.style.display = 'none';
-      loadingOverlay.style.display = 'flex';
-      updateUserUI(u);
-      await loadFromFirestore();
-      loadingOverlay.style.display = 'none';
-      init();
-    }
-  });
-
+  // No room yet — show setup form
   loadingOverlay.style.display = 'none';
-
-  if (user) {
-    UID = user.uid;
-    authOverlay.style.display = 'none';
-    loadingOverlay.style.display = 'flex';
-    updateUserUI(user);
-    await loadFromFirestore();
-    loadingOverlay.style.display = 'none';
-    init();
-  } else {
-    authOverlay.style.display = 'flex';
-  }
+  roomOverlay.style.display = 'flex';
+  setTimeout(() => document.getElementById('roomIdInput').focus(), 100);
 }
+
+// Wire up the room form
+document.getElementById('roomEnterBtn').addEventListener('click', () => {
+  const raw = document.getElementById('roomIdInput').value;
+  const v = validateRoomId(raw);
+  const hint = document.getElementById('roomHint');
+  if (!v.ok) {
+    hint.style.color = 'var(--accent)';
+    hint.textContent = v.msg;
+    return;
+  }
+  hint.style.color = 'var(--ink3)';
+  hint.textContent = '進入中…';
+  enterRoom(v.id);
+});
+document.getElementById('roomIdInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('roomEnterBtn').click();
+});
 
 startApp();
 
-document.getElementById('googleSignInBtn').addEventListener('click', async () => {
-  const provider = new GoogleAuthProvider();
-  // Force account chooser, helps avoid silent failures
-  provider.setCustomParameters({ prompt: 'select_account' });
-
-  try {
-    document.getElementById('authStatus').textContent = '登入中…';
-
-    // Always use redirect on GitHub Pages — popup is blocked by Cross-Origin-Opener-Policy header
-    // that GitHub Pages sets, which breaks signInWithPopup on every browser.
-    loadingOverlay.style.display = 'flex';
-    authOverlay.style.display = 'none';
-    await signInWithRedirect(auth, provider);
-    // Page navigates away; nothing else runs here.
-  } catch(e) {
-    loadingOverlay.style.display = 'none';
-    authOverlay.style.display = 'flex';
-    document.getElementById('authStatus').textContent = '登入失敗：' + (e.code || e.message || '請再試一次');
-    console.error('[auth] sign-in error:', e);
-  }
-});
-
-function updateUserUI(user) {
+// Render the room badge in the header (shows current room + actions)
+function updateRoomUI() {
   const el = document.getElementById('userInfo');
-  if (!el) return;
+  if (!el || !ROOM) return;
+  // Mask the middle of the room id for visual privacy in case of screenshots
+  const masked = ROOM.length > 8 ? ROOM.slice(0, 3) + '••••' + ROOM.slice(-2) : ROOM;
   el.innerHTML = `
-    <img src="${user.photoURL}" style="width:26px;height:26px;border-radius:50%;vertical-align:middle;">
-    <span style="font-size:11px;color:var(--ink2);">${user.displayName?.split(' ')[0] || user.email}</span>
-    <button onclick="doSignOut()" style="background:none;border:1px solid var(--line);border-radius:4px;padding:3px 8px;font-family:'JetBrains Mono',monospace;font-size:9px;cursor:pointer;color:var(--ink3);letter-spacing:0.08em;">登出</button>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);letter-spacing:0.08em;">ROOM</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);font-weight:600;">${masked}</span>
+    <button onclick="copyRoomLink()" title="複製專屬網址" style="background:none;border:1px solid var(--line);border-radius:4px;padding:3px 8px;font-family:'JetBrains Mono',monospace;font-size:9px;cursor:pointer;color:var(--ink3);letter-spacing:0.08em;">複製網址</button>
+    <button onclick="switchRoom()" title="切換房間" style="background:none;border:1px solid var(--line);border-radius:4px;padding:3px 8px;font-family:'JetBrains Mono',monospace;font-size:9px;cursor:pointer;color:var(--ink3);letter-spacing:0.08em;">切換</button>
   `;
 }
-window.doSignOut = async () => { await signOut(auth); location.reload(); };
+
+window.copyRoomLink = async () => {
+  const url = new URL(location.href);
+  url.searchParams.set('room', ROOM);
+  const link = url.toString();
+  try {
+    await navigator.clipboard.writeText(link);
+    alert('已複製專屬網址，貼到另一台裝置即可同步：\n\n' + link);
+  } catch {
+    prompt('複製這個網址：', link);
+  }
+};
+
+window.switchRoom = () => {
+  if (!confirm('切換房間後，目前頁面會回到設定畫面。資料仍保存在雲端，下次輸入相同 ID 即可回到。\n\n確定切換？')) return;
+  clearStoredRoom();
+  // Detach listeners to stop syncing the old room
+  listeners.forEach(unsub => { try { unsub(); } catch(e) {} });
+  listeners.length = 0;
+  ROOM = null;
+  // Reset cache so old data doesn't bleed into the next room
+  cache.daily = {}; cache.startup = {}; cache.weekly = {}; cache.monthly = {};
+  location.reload();
+};
 
 // ═══ RE-EXPORT JSON (updated for cache) ═══
 window.exportJSONFn = function() {
@@ -1083,15 +1117,15 @@ window.importJSONFn = async function(e) {
   reader.onload=async ev=>{
     try {
       const o=JSON.parse(ev.target.result);
-      if(!UID){alert('請先登入');return;}
+      if(!ROOM){alert('請先進入房間');return;}
       const batch=writeBatch(db);
       if(o.data) { Object.entries(o.data).forEach(([k,v])=>batch.set(userDocRef('daily',k),v,{merge:true})); }
       if(o.startup) batch.set(userDocRef('meta','startup'),o.startup,{merge:true});
       if(o.weekly) { Object.entries(o.weekly).forEach(([k,v])=>batch.set(userDocRef('weekly',k),v,{merge:true})); }
       if(o.monthly) { Object.entries(o.monthly).forEach(([k,v])=>batch.set(userDocRef('monthly',k),v,{merge:true})); }
       await batch.commit();
-      await loadFromFirestore();
-      init();
+      // Listeners are live, so cache will refresh automatically — but force a render now
+      refreshAll();
       alert('匯入成功！');
     } catch(err){alert('格式錯誤或匯入失敗：'+err.message);}
   };
@@ -1379,7 +1413,7 @@ function init(){renderToday();bindInputs();window._appInitialized = true;}
 Object.assign(window, {
   toggleCheck, toggleStartup, showDayModal, closeModal,
   saveWeeklyReview, saveMonthlyReview: saveMonthlyReview,
-  calcWHR, exportJSON, importJSON, clearAll, doSignOut
+  calcWHR, exportJSON, importJSON, clearAll
 });
 // init() is called from startApp() after auth + data load — do not call here
 </script>
