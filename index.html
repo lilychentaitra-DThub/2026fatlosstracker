@@ -502,6 +502,7 @@ footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);font-fa
 <!-- TABS -->
 <div class="tabs">
   <button class="tab active" data-tab="today">今日打卡</button>
+  <button class="tab" data-tab="morning">七招</button>
   <button class="tab" data-tab="trend">趨勢</button>
   <button class="tab" data-tab="history">歷史</button>
   <button class="tab" data-tab="weekly">週 Review</button>
@@ -577,6 +578,57 @@ footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);font-fa
       <div class="card-meta">不要一次全做</div>
     </div>
     <div class="roadmap-grid" id="roadmapGrid"></div>
+  </div>
+</div>
+
+<!-- MORNING ABS -->
+<div class="panel" id="panel-morning">
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><span class="cat-num">01</span> Morning Ritual — 晨間七招</div>
+      <div id="morningTodayBadge"></div>
+    </div>
+    <p style="font-size:13px;color:var(--ink2);line-height:1.7;margin-bottom:14px;">起床第一件事，5 分鐘川字肌。每招 10 下開始，重點是<strong style="color:var(--ink)">每一天都做</strong>。</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:6px;">
+      <button id="morningTodayBtn" class="btn" style="background:var(--accent);color:#fff;border-color:var(--accent);">標記今日完成</button>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);">同步至「今日打卡」的晨間七招</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><span class="cat-num">02</span> Timer — 計時器</div>
+      <div class="card-meta">三點定格用 +10s</div>
+    </div>
+    <div style="text-align:center;padding:10px 0 6px;">
+      <div id="morningTimer" style="font-family:'JetBrains Mono',monospace;font-size:48px;font-weight:600;letter-spacing:0.05em;color:var(--ink);line-height:1;">00:00</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap;">
+        <button class="btn" id="mtStart">START</button>
+        <button class="btn" id="mtPause">PAUSE</button>
+        <button class="btn" id="mtReset">RESET</button>
+        <button class="btn" id="mtHold">+ 10s 定格</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><span class="cat-num">03</span> 七招動作</div>
+      <div class="card-meta">每招 10 下 · 約 5 分鐘</div>
+    </div>
+    <div id="morningExList"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><span class="cat-num">04</span> 原則</div>
+    </div>
+    <div style="font-size:13px;line-height:1.85;color:var(--ink2);">
+      <div style="padding:6px 0;">• 從每招 <strong style="color:var(--ink)">10 下</strong>開始，不求多</div>
+      <div style="padding:6px 0;">• 7 個動作做完<strong style="color:var(--ink)">約 5 分鐘</strong></div>
+      <div style="padding:6px 0;">• <strong style="color:var(--ink)">每一天都做</strong>，細水長流</div>
+      <div style="padding:6px 0;">• 累的時候可以做精華 3 招（① ⑤ ⑦）</div>
+    </div>
   </div>
 </div>
 
@@ -1135,6 +1187,7 @@ window.importJSONFn = async function(e) {
 // ═══ CONSTANTS ═══
 const SK='ft_v2_data',SUK='ft_v2_startup',SRK='ft_v2_reviews',SMK='ft_v2_monthly';
 const CHECKS=[
+  {id:'morningAbs',label:'晨間七招',sub:'起床 5 分鐘川字肌'},
   {id:'train',label:'今天有重訓',sub:''},
   {id:'cardio',label:'今天有有氧',sub:''},
   {id:'protein',label:'蛋白質達標',sub:'90–110g'},
@@ -1145,7 +1198,7 @@ const CHECKS=[
   {id:'walk',label:'步數達 10000+',sub:'日常活動量'},
   {id:'freeMeal',label:'本日有自由餐',sub:'一週限 1–2 次'},
 ];
-const SCORE_IDS=['train','cardio','protein','noSugar','noLate','water','sleep','walk'];
+const SCORE_IDS=['morningAbs','train','cardio','protein','noSugar','noLate','water','sleep','walk'];
 const STARTUP=[
   {week:1,name:'建立基本動作',items:[{id:'s1a',label:'重訓日早上備好運動衣'},{id:'s1b',label:'設定 11:30 睡眠鬧鐘'}]},
   {week:2,name:'加入飲食結構',items:[{id:'s2a',label:'早餐固定選擇清單'},{id:'s2b',label:'戒含糖飲料'},{id:'s2c',label:'午餐後散步 15 分鐘'}]},
@@ -1181,8 +1234,10 @@ function renderToday(){
     document.getElementById(id).value=r[f]||'';
   });
   const sc=score(r);const col=scoreColor(sc)||'neutral';
-  document.getElementById('todayBadge').innerHTML=`<span class="badge ${col}">${sc!==null?sc+'/7 · ':''}${scoreLabel(sc)}</span>`;
+  document.getElementById('todayBadge').innerHTML=`<span class="badge ${col}">${sc!==null?sc+'/9 · ':''}${scoreLabel(sc)}</span>`;
   updateStats();renderRoadmap();
+  // 七招頁籤狀態同步（若存在）
+  if(document.getElementById('morningTodayBtn'))renderMorning();
 }
 function toggleCheck(id){
   const data=load(SK);const tk=todayKey();
@@ -1319,7 +1374,7 @@ function showDayModal(k){
   const data=load(SK);const r=data[k];if(!r){alert('這天沒有紀錄');return;}
   const d=new Date(k);const sc=score(r);
   document.getElementById('modalTitle').textContent=`${k} · 週${WD[d.getDay()]}`;
-  let html=`<div style="margin-bottom:12px;"><span class="badge ${scoreColor(sc)||'neutral'}">${sc}/7 · ${scoreLabel(sc)}</span></div><div style="margin-bottom:12px;">`;
+  let html=`<div style="margin-bottom:12px;"><span class="badge ${scoreColor(sc)||'neutral'}">${sc}/9 · ${scoreLabel(sc)}</span></div><div style="margin-bottom:12px;">`;
   CHECKS.forEach(c=>{const on=r.checks?.[c.id];html+=`<div style="padding:3px 0;font-size:13px;display:flex;gap:8px;color:${on?'var(--ink)':'var(--ink3)'}"><span style="color:${on?'var(--accent)':'var(--line2)'};">${on?'●':'○'}</span>${c.label}</div>`;});
   html+='</div>';
   [{k:'weight',l:'體重',u:'kg'},{k:'bodyFat',l:'體脂',u:'%'},{k:'steps',l:'步數',u:''},{k:'energy',l:'精力',u:'/5'}].forEach(f=>{
@@ -1394,15 +1449,79 @@ function saveMonthlyReview(){
 function exportJSON(){exportJSONFn();}
 function importJSON(e){importJSONFn(e);}
 function exportCSV(){
-  const data=load(SK);const h=['日期','體重','體脂','步數','精力','重訓','蛋白質','無糖','不晚食','飲水','睡眠','步數達標','自由餐','分數','備註'];
-  const rows=Object.keys(data).sort().map(k=>{const r=data[k];const c=r.checks||{};return[k,r.weight||'',r.bodyFat||'',r.steps||'',r.energy||'',c.train?1:0,c.protein?1:0,c.noSugar?1:0,c.noLate?1:0,c.water?1:0,c.sleep?1:0,c.walk?1:0,c.freeMeal?1:0,score(r)||0,(r.notes||'').replace(/,/g,'，').replace(/\n/g,' ')].join(',');});
+  const data=load(SK);const h=['日期','體重','體脂','步數','精力','晨間七招','重訓','有氧','蛋白質','無糖','不晚食','飲水','睡眠','步數達標','自由餐','分數','備註'];
+  const rows=Object.keys(data).sort().map(k=>{const r=data[k];const c=r.checks||{};return[k,r.weight||'',r.bodyFat||'',r.steps||'',r.energy||'',c.morningAbs?1:0,c.train?1:0,c.cardio?1:0,c.protein?1:0,c.noSugar?1:0,c.noLate?1:0,c.water?1:0,c.sleep?1:0,c.walk?1:0,c.freeMeal?1:0,score(r)||0,(r.notes||'').replace(/,/g,'，').replace(/\n/g,' ')].join(',');});
   const csv=[h.join(','),...rows].join('\n');document.getElementById('csvPreview').textContent=csv;
   const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`body_sys_${todayKey()}.csv`;a.click();
 }
 function clearAll(){if(!confirm('確定要清除所有資料？這會清除 Firestore 上的所有紀錄。'))return;cache.daily={};cache.startup={};cache.weekly={};cache.monthly={};init();alert('已清除本地快取，Firestore 資料請至 Firebase Console 手動刪除。');}
 
+// ═══ MORNING ABS — 晨間七招 ═══
+const MORNING_EX=[
+  {n:'01',name:'屈膝捲腹',en:'Basic Crunches',reps:'× 10 下',tip:'想像有人從上方拉你的手，意識集中在<b>上腹</b>，<b>脖子放鬆</b>不要用力。'},
+  {n:'02',name:'抬膝捲腹',en:'Tabletop Crunches',reps:'× 10 下',tip:'雙腳呈桌面姿勢，<b>眼睛看肚臍</b>，上腹有痠感就是做對了。'},
+  {n:'03',name:'左右觸腳踝',en:'Heel Touches',reps:'左右各 × 10 下',tip:'雙手左右交替碰腳踝，<b>自然呼吸不要憋氣</b>，左+右算一下。'},
+  {n:'04',name:'仰臥抬腿三點定格',en:'3-Level Leg Holds',reps:'下／中／上 各停 10 秒',tip:'肘撐姿勢，腿在<b>下、中、上三段</b>各停留 10 秒。可用上方計時器。'},
+  {n:'05',name:'仰臥抬腿',en:'Leg Raises',reps:'× 10 下',tip:'<b>腳放下越慢效果越好</b>。一開始放不到很低沒關係，下腹有痠感就好。'},
+  {n:'06',name:'仰臥剪刀腳',en:'Scissor Kicks',reps:'左右各 × 10 下',tip:'肘撐時<b>胸部挺起、不要駝背</b>，才會用到下腹力量。'},
+  {n:'07',name:'側平板支撐',en:'Side Plank',reps:'左右各撐住',tip:'<b>讓腰變細的神動作</b>。還有體力可以多做幾下，左右兩側都要做。'},
+];
+function renderMorning(){
+  const data=load(SK);const tk=todayKey();const r=data[tk]||{checks:{}};
+  const done=!!r.checks?.morningAbs;
+  // 動作清單
+  document.getElementById('morningExList').innerHTML=MORNING_EX.map(e=>`
+    <div style="padding:14px 0;border-bottom:1px solid var(--line);">
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:var(--accent);min-width:32px;">${e.n}</div>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:600;color:var(--ink);line-height:1.3;">${e.name}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);margin-top:2px;">${e.en} · ${e.reps}</div>
+          <div style="font-size:13px;color:var(--ink2);line-height:1.7;margin-top:8px;">${e.tip}</div>
+        </div>
+      </div>
+    </div>
+  `).join('').replace(/<b>/g,'<strong style="color:var(--ink)">').replace(/<\/b>/g,'</strong>');
+  // Today badge
+  document.getElementById('morningTodayBadge').innerHTML=done
+    ?`<span class="badge green">今日已完成 ✓</span>`
+    :`<span class="badge neutral">尚未打卡</span>`;
+  // Today button
+  const btn=document.getElementById('morningTodayBtn');
+  btn.textContent=done?'取消今日完成':'標記今日完成';
+  btn.style.background=done?'var(--bg-card)':'var(--accent)';
+  btn.style.color=done?'var(--ink)':'#fff';
+  btn.style.borderColor=done?'var(--line2)':'var(--accent)';
+  btn.onclick=()=>toggleCheck('morningAbs');
+}
+// Timer
+let _mtSec=0,_mtInt=null,_mtHoldInt=null;
+function _mtRender(){
+  const m=Math.floor(_mtSec/60),s=_mtSec%60;
+  const el=document.getElementById('morningTimer');
+  if(el)el.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function _mtStart(){if(_mtInt)return;_mtInt=setInterval(()=>{_mtSec++;_mtRender();},1000);}
+function _mtPause(){clearInterval(_mtInt);_mtInt=null;}
+function _mtReset(){clearInterval(_mtInt);_mtInt=null;_mtSec=0;_mtRender();}
+function _mtHold(){
+  if(_mtHoldInt)return;
+  let c=10;const el=document.getElementById('morningTimer');
+  el.textContent=`定格 ${c}`;
+  _mtHoldInt=setInterval(()=>{
+    c--;
+    if(c<=0){clearInterval(_mtHoldInt);_mtHoldInt=null;el.textContent='完成 ✓';setTimeout(_mtRender,1200);}
+    else el.textContent=`定格 ${c}`;
+  },1000);
+}
+// 綁定 timer 按鈕（一次即可，元素 ID 永遠存在於 DOM）
+['mtStart','mtPause','mtReset','mtHold'].forEach((id,i)=>{
+  const fn=[_mtStart,_mtPause,_mtReset,_mtHold][i];
+  document.addEventListener('click',e=>{if(e.target&&e.target.id===id)fn();});
+});
+
 // Tabs
-const TAB_FNS={today:renderToday,trend:renderTrends,history:renderCalendar,weekly:renderWeekly,monthly:renderMonthly,plan:()=>{},data:updateStats};
+const TAB_FNS={today:renderToday,morning:renderMorning,trend:renderTrends,history:renderCalendar,weekly:renderWeekly,monthly:renderMonthly,plan:()=>{},data:updateStats};
 document.querySelectorAll('.tab').forEach(tab=>{tab.addEventListener('click',()=>{const t=tab.dataset.tab;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b===tab));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+t));TAB_FNS[t]?.();});});
 document.getElementById('prevMonth').onclick=()=>{calMonth.setMonth(calMonth.getMonth()-1);renderCalendar();};
 document.getElementById('nextMonth').onclick=()=>{calMonth.setMonth(calMonth.getMonth()+1);renderCalendar();};
